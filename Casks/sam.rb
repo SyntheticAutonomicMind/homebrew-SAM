@@ -17,7 +17,7 @@ cask "sam" do
     strategy :github_latest
   end
 
-  app "Synthetic Autonomic Mind.app"
+  app "SAM.app"
 
   zap trash: [
     "~/Library/Application Support/com.fewtarius.syntheticautonomicmind",
