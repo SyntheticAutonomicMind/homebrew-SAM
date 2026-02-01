@@ -1,0 +1,71 @@
+name: Update Formula on Release
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        required: true
+        type: string
+        description: "Project name (clio, sam, etc.)"
+      version:
+        required: true
+        type: string
+        description: "Release version tag"
+      download_url:
+        required: true
+        type: string
+        description: "URL to release tarball"
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout homebrew repo
+        uses: actions/checkout@v4
+        with:
+          repository: SyntheticAutonomicMind/homebrew
+          token: ${{ secrets.HOMEBREW_TOKEN }}
+
+      - name: Download and calculate SHA256
+        id: hash
+        run: |
+          curl -L -o /tmp/${{ inputs.project }}.tar.gz "${{ inputs.download_url }}"
+          SHA256=$(shasum -a 256 /tmp/${{ inputs.project }}.tar.gz | cut -d' ' -f1)
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          echo "Calculated SHA256: $SHA256"
+
+      - name: Update formula
+        run: |
+          PROJECT="${{ inputs.project }}"
+          VERSION="${{ inputs.version }}"
+          URL="${{ inputs.download_url }}"
+          SHA256="${{ steps.hash.outputs.sha256 }}"
+          
+          # Update the formula file
+          sed -i "s|url .*|url \"$URL\"|" Formula/$PROJECT.rb
+          sed -i "s|sha256 .*|sha256 \"$SHA256\"|" Formula/$PROJECT.rb
+          
+          # Verify changes
+          echo "Updated Formula/$PROJECT.rb:"
+          grep -E "url|sha256" Formula/$PROJECT.rb
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          PROJECT="${{ inputs.project }}"
+          VERSION="${{ inputs.version }}"
+          
+          git add Formula/$PROJECT.rb
+          git commit -m "chore($PROJECT): update to $VERSION"
+          git push
+
+      - name: Notify completion
+        run: |
+          echo "✅ Updated ${{ inputs.project }} to ${{ inputs.version }}"
+          echo "Formula: Formula/${{ inputs.project }}.rb"
+          echo "SHA256: ${{ steps.hash.outputs.sha256 }}"
