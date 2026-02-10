@@ -29,7 +29,7 @@ brew upgrade
 
 | Tool | Purpose | Version |
 |------|---------|---------|
-| **CLIO** | Terminal-native AI coding assistant | 20260201.1 |
+| **CLIO** | Terminal-native AI coding assistant | 20260210.1 |
 
 ## CLIO Quick Start
 
