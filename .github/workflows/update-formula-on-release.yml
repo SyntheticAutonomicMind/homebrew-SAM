@@ -1,20 +1,8 @@
 name: Update Formula on Release
 
 on:
-  workflow_call:
-    inputs:
-      project:
-        required: true
-        type: string
-        description: "Project name (clio, sam, etc.)"
-      version:
-        required: true
-        type: string
-        description: "Release version tag"
-      download_url:
-        required: true
-        type: string
-        description: "URL to release tarball"
+  repository_dispatch:
+    types: [formula-update]
   workflow_dispatch:
     inputs:
       project:
@@ -37,49 +25,73 @@ jobs:
       contents: write
     
     steps:
-      - name: Checkout homebrew repo
+      - name: Extract inputs
+        id: inputs
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "project=${{ github.event.client_payload.project }}" >> $GITHUB_OUTPUT
+            echo "version=${{ github.event.client_payload.version }}" >> $GITHUB_OUTPUT
+            echo "download_url=${{ github.event.client_payload.download_url }}" >> $GITHUB_OUTPUT
+          else
+            echo "project=${{ inputs.project }}" >> $GITHUB_OUTPUT
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+            echo "download_url=${{ inputs.download_url }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout homebrew-SAM repo
         uses: actions/checkout@v4
-        with:
-          repository: SyntheticAutonomicMind/homebrew
-          token: ${{ secrets.HOMEBREW_TOKEN }}
 
       - name: Download and calculate SHA256
         id: hash
         run: |
-          curl -L -o /tmp/${{ inputs.project }}.tar.gz "${{ inputs.download_url }}"
-          SHA256=$(shasum -a 256 /tmp/${{ inputs.project }}.tar.gz | cut -d' ' -f1)
+          PROJECT="${{ steps.inputs.outputs.project }}"
+          URL="${{ steps.inputs.outputs.download_url }}"
+          
+          echo "Downloading: $URL"
+          curl -L -o /tmp/$PROJECT.tar.gz "$URL"
+          
+          SHA256=$(shasum -a 256 /tmp/$PROJECT.tar.gz | cut -d' ' -f1)
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
           echo "Calculated SHA256: $SHA256"
 
       - name: Update formula
         run: |
-          PROJECT="${{ inputs.project }}"
-          VERSION="${{ inputs.version }}"
-          URL="${{ inputs.download_url }}"
+          PROJECT="${{ steps.inputs.outputs.project }}"
+          VERSION="${{ steps.inputs.outputs.version }}"
+          URL="${{ steps.inputs.outputs.download_url }}"
           SHA256="${{ steps.hash.outputs.sha256 }}"
           
+          FORMULA="Formula/$PROJECT.rb"
+          
+          if [ ! -f "$FORMULA" ]; then
+            echo "[ERROR] Formula not found: $FORMULA"
+            exit 1
+          fi
+          
           # Update the formula file
-          sed -i "s|url .*|url \"$URL\"|" Formula/$PROJECT.rb
-          sed -i "s|sha256 .*|sha256 \"$SHA256\"|" Formula/$PROJECT.rb
+          sed -i "s|url \".*\"|url \"$URL\"|" "$FORMULA"
+          sed -i "s|sha256 \".*\"|sha256 \"$SHA256\"|" "$FORMULA"
           
           # Verify changes
-          echo "Updated Formula/$PROJECT.rb:"
-          grep -E "url|sha256" Formula/$PROJECT.rb
+          echo "Updated $FORMULA:"
+          grep -E "url|sha256" "$FORMULA"
 
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          PROJECT="${{ inputs.project }}"
-          VERSION="${{ inputs.version }}"
+          PROJECT="${{ steps.inputs.outputs.project }}"
+          VERSION="${{ steps.inputs.outputs.version }}"
           
           git add Formula/$PROJECT.rb
           git commit -m "chore($PROJECT): update to $VERSION"
           git push
 
-      - name: Notify completion
+      - name: Summary
         run: |
-          echo "✅ Updated ${{ inputs.project }} to ${{ inputs.version }}"
-          echo "Formula: Formula/${{ inputs.project }}.rb"
-          echo "SHA256: ${{ steps.hash.outputs.sha256 }}"
+          echo "## Formula Updated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project:** ${{ steps.inputs.outputs.project }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** ${{ steps.inputs.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **SHA256:** ${{ steps.hash.outputs.sha256 }}" >> $GITHUB_STEP_SUMMARY
