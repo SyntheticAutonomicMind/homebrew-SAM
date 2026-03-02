@@ -1,0 +1,37 @@
+{
+   "metadata" : {
+      "created" : 1770723348,
+      "last_updated" : 1770723643,
+      "version" : "1.0"
+   },
+   "patterns" : {
+      "code_patterns" : [
+         {
+            "confidence" : 0.9,
+            "examples" : [
+               "Formula/clio.rb",
+               "Casks/sam.rb",
+               "scripts/update-formula.sh"
+            ],
+            "pattern" : "For Homebrew tap updates: Formulas use .tar.gz releases (url + sha256), Casks use .dmg releases (version + sha256). Always download the asset, calculate SHA256, and update both the URL/version AND the hash. The workflows automatically commit and push changes when triggered.",
+            "timestamp" : 1770723643
+         }
+      ],
+      "context_rules" : {},
+      "discoveries" : [],
+      "failures" : [],
+      "problem_solutions" : [
+         {
+            "error" : "Homebrew formulas/casks not auto-updating when CLIO/SAM publish releases",
+            "examples" : [
+               ".github/workflows/update-formula-on-release.yml",
+               ".github/workflows/update-cask-on-release.yml"
+            ],
+            "solution" : "The update workflows in homebrew-SAM repo need BOTH workflow_call AND workflow_dispatch triggers. workflow_call allows reusability, but workflow_dispatch is required for remote repositories (CLIO/SAM) to trigger the workflow via GitHub API. Add both triggers with identical input schemas to .github/workflows/update-formula-on-release.yml and update-cask-on-release.yml",
+            "solved_count" : 1,
+            "timestamp" : 1770723643
+         }
+      ],
+      "workflows" : []
+   }
+}
