@@ -27,15 +27,23 @@ jobs:
     steps:
       - name: Extract inputs
         id: inputs
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_PROJECT: ${{ github.event.client_payload.project }}
+          DISPATCH_VERSION: ${{ github.event.client_payload.version }}
+          DISPATCH_URL: ${{ github.event.client_payload.download_url }}
+          INPUT_PROJECT: ${{ inputs.project }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_URL: ${{ inputs.download_url }}
         run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            echo "project=${{ github.event.client_payload.project }}" >> $GITHUB_OUTPUT
-            echo "version=${{ github.event.client_payload.version }}" >> $GITHUB_OUTPUT
-            echo "download_url=${{ github.event.client_payload.download_url }}" >> $GITHUB_OUTPUT
+          if [ "$EVENT_NAME" = "repository_dispatch" ]; then
+            echo "project=$DISPATCH_PROJECT" >> $GITHUB_OUTPUT
+            echo "version=$DISPATCH_VERSION" >> $GITHUB_OUTPUT
+            echo "download_url=$DISPATCH_URL" >> $GITHUB_OUTPUT
           else
-            echo "project=${{ inputs.project }}" >> $GITHUB_OUTPUT
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-            echo "download_url=${{ inputs.download_url }}" >> $GITHUB_OUTPUT
+            echo "project=$INPUT_PROJECT" >> $GITHUB_OUTPUT
+            echo "version=$INPUT_VERSION" >> $GITHUB_OUTPUT
+            echo "download_url=$INPUT_URL" >> $GITHUB_OUTPUT
           fi
 
       - name: Checkout homebrew-SAM repo
@@ -43,10 +51,10 @@ jobs:
 
       - name: Download and calculate SHA256
         id: hash
+        env:
+          PROJECT: ${{ steps.inputs.outputs.project }}
+          URL: ${{ steps.inputs.outputs.download_url }}
         run: |
-          PROJECT="${{ steps.inputs.outputs.project }}"
-          URL="${{ steps.inputs.outputs.download_url }}"
-          
           echo "Downloading: $URL"
           curl -L -o /tmp/$PROJECT.tar.gz "$URL"
           
@@ -55,12 +63,12 @@ jobs:
           echo "Calculated SHA256: $SHA256"
 
       - name: Update formula
+        env:
+          PROJECT: ${{ steps.inputs.outputs.project }}
+          VERSION: ${{ steps.inputs.outputs.version }}
+          URL: ${{ steps.inputs.outputs.download_url }}
+          SHA256: ${{ steps.hash.outputs.sha256 }}
         run: |
-          PROJECT="${{ steps.inputs.outputs.project }}"
-          VERSION="${{ steps.inputs.outputs.version }}"
-          URL="${{ steps.inputs.outputs.download_url }}"
-          SHA256="${{ steps.hash.outputs.sha256 }}"
-          
           FORMULA="Formula/$PROJECT.rb"
           
           if [ ! -f "$FORMULA" ]; then
@@ -77,21 +85,25 @@ jobs:
           grep -E "url|sha256" "$FORMULA"
 
       - name: Commit and push
+        env:
+          PROJECT: ${{ steps.inputs.outputs.project }}
+          VERSION: ${{ steps.inputs.outputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          PROJECT="${{ steps.inputs.outputs.project }}"
-          VERSION="${{ steps.inputs.outputs.version }}"
           
           git add Formula/$PROJECT.rb
           git commit -m "chore($PROJECT): update to $VERSION"
           git push
 
       - name: Summary
+        env:
+          PROJECT: ${{ steps.inputs.outputs.project }}
+          VERSION: ${{ steps.inputs.outputs.version }}
+          SHA256: ${{ steps.hash.outputs.sha256 }}
         run: |
           echo "## Formula Updated" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Project:** ${{ steps.inputs.outputs.project }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version:** ${{ steps.inputs.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **SHA256:** ${{ steps.hash.outputs.sha256 }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project:** $PROJECT" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
+          echo "- **SHA256:** $SHA256" >> $GITHUB_STEP_SUMMARY
