@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Andrew Wyatt (Fewtarius)
 
 cask "mira" do
-  version "20260411.3"
-  sha256 "75dc0ba0a373a561f4b97420e431e13e7edc517377668dffbda4b58155031269"
+  version "20260411.4"
+  sha256 "fdfd6efabc390f6a30349375abef1603a4ba0343be53da5192c3c49fc44d0b8a"
 
   url "https://github.com/SyntheticAutonomicMind/MIRA/releases/download/#{version}/mira-macos-arm64.dmg",
       verified: "github.com/SyntheticAutonomicMind/MIRA/"
