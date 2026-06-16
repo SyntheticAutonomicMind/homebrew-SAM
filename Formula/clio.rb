@@ -1,8 +1,8 @@
 class Clio < Formula
   desc "Command Line Intelligence Orchestrator - Terminal-native AI coding assistant"
   homepage "https://github.com/SyntheticAutonomicMind/CLIO"
-  url "https://github.com/SyntheticAutonomicMind/CLIO/releases/download/20260613.2/clio-20260613.2.tar.gz"
-  sha256 "52eee071f15b2bd4478fb4d1367ba4238617b4ca41fab65edcc0414312d20128"
+  url "https://github.com/SyntheticAutonomicMind/CLIO/releases/download/20260616.1/clio-20260616.1.tar.gz"
+  sha256 "a52c385990f424e1b135fff89fd634066c6176ab9b6cd27155fb8ff8c93872b7"
   license "GPL-3.0"
 
   depends_on "perl"
