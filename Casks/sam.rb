@@ -3,7 +3,7 @@
 
 cask "sam" do
   version "20261005.1"
-  sha256 "e5bfe9ab200aff8e7982629194debd1578622f6ec04dabc91a0adbfe207849c1"
+  sha256 "70f9748019d806daa1c75f6b152223e71cc0c4f8213d9cb67a232b2cd8d2955e"
 
   url "https://github.com/SyntheticAutonomicMind/SAM/releases/download/#{version}/SAM-#{version}.dmg",
       verified: "github.com/SyntheticAutonomicMind/SAM/"
