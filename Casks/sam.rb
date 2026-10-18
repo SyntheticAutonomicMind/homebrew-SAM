@@ -2,8 +2,8 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 Andrew Wyatt (Fewtarius)
 
 cask "sam" do
-  version "20261016.1"
-  sha256 "2867209d3d016e67cbd32abbe55742c32b402426b73e50d0e59cac5abcfb3b20"
+  version "20261018.1"
+  sha256 "c3b73f5c455dc44b6e2cdc00e698487473c6ca519c90be4a8803999f36371bc8"
 
   url "https://github.com/SyntheticAutonomicMind/SAM/releases/download/#{version}/SAM-#{version}.dmg",
       verified: "github.com/SyntheticAutonomicMind/SAM/"
